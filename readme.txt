@@ -1,8 +1,20 @@
-readme 
+readme / various useful commands
 
 # error logs
-root@ubuntu-s-1vcpu-512mb-10gb-sfo3-01:~# cat /var/log/fw29/fw29_log.out.log
-root@ubuntu-s-1vcpu-512mb-10gb-sfo3-01:~# cat /var/log/fw29/fw29_log.err.log
+cat /var/log/fw29/fw29_log.out.log
+cat /var/log/fw29/fw29_log.err.log
+
+# cronjob log
+cat /var/log/syslog
+cat /root/fw29/api.log
+
+# edit cronjob
+crontab -e
+
+# cronjob
+PATH=/root/fw29
+HOME=/root/fw29
+17 02 * * * /root/fw29/venv/bin/python3.12 /root/fw29/api.py >> api.log
 
 # Enter virtual env
 source env/bin/activate
