@@ -14,22 +14,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-
-# import ipinfo
-# import urllib
-
 load_dotenv()
 
 dirname = os.path.dirname(__file__)
-
-
-# ipinfo
-
-# url = 'http://ipinfo.io/json'
-# access_token = '854b39ba27faef'
-# handler = ipinfo.getHandlerAsync(access_token)
-
-# data
 
 places = []
 weather = []
@@ -39,6 +26,7 @@ books = []
 creatures = []
 textures = []
 instruments = []
+excerpts = []
 
 package = ""
 
@@ -64,7 +52,8 @@ def load_data():
         'books': books,
         'creatures': creatures,
         'textures': textures,
-        'instruments': instruments
+        'instruments': instruments,
+        'excerpts': excerpts
     }
     for key, value in data_files.items():
         with open(os.path.join(dirname, f'./data/{key}.csv'), newline='') as f:
@@ -94,7 +83,7 @@ def send_email(package):
     msg['Subject'] = f""" {package['haiku']} """
 
     body = f"""
-    <p><i>{package['fragments']['place']}, {package['fragments']['weather']}, {package['fragments']['sounds']}, {package['fragments']['snacks']}, {package['fragments']['books']}, {package['fragments']['textures']}, {package['fragments']['creatures']}</i></p>
+    <p><i>{package['fragments']['place']}, {package['fragments']['weather']}, {package['fragments']['sound']}, {package['fragments']['snack']}, {package['fragments']['book']}, {package['fragments']['texture']}, {package['fragments']['creature']},</i></p>
     <p><i>{package['interpretation']}</i></p>
     <p>{datetime.now()}</p>
 
@@ -115,12 +104,13 @@ def generate_message():
         "fragments": {
             "place": places[random.randint(0, len(places)-1)],
             "weather": weather[random.randint(0, len(weather)-1)],
-            "sounds": sounds[random.randint(0, len(sounds)-1)],
-            "snacks": snacks[random.randint(0, len(snacks)-1)],
-            "books": books[random.randint(0, len(books)-1)],
-            "textures": textures[random.randint(0, len(textures)-1)],
-            "creatures": creatures[random.randint(0, len(creatures)-1)],
-            "instruments": instruments[random.randint(0, len(instruments)-1)]
+            "sound": sounds[random.randint(0, len(sounds)-1)],
+            "snack": snacks[random.randint(0, len(snacks)-1)],
+            "book": books[random.randint(0, len(books)-1)],
+            "texture": textures[random.randint(0, len(textures)-1)],
+            "creature": creatures[random.randint(0, len(creatures)-1)],
+            # "instrument": instruments[random.randint(0, len(instruments)-1)],
+            "excerpt": excerpts[random.randint(0, len(excerpts)-1)]
         }
     }
 
@@ -139,19 +129,21 @@ def generate_message():
     )
 
     poem = completion.choices[0].message.content
+    excerpt = package['fragments']['excerpt']
+
     package['haiku'] = str(poem.replace("\n", " "))
 
     print("completed haiku")
     print("bulding interpretation")
 
-    prompt = f"interpret this poem (<100 words), as an omen of a person's love life and personal life. these signs come very clear to you, you give direct, detailed, instructions {poem}"
+    prompt = f"interpret this poem (<100 words), and use the hints of the following literary quote, as an insight into a person's love life and inner life. these signs come very clear to you, you give direct, detailed, instructions. {poem}, {excerpt}"
 
     completion = client.chat.completions.create(
         model="gpt-4o",
         # model="gpt-3.5-turbo",
         # model="gpt-4",
         messages=[
-            {"role": "system", "content": "you are a fortune teller, reading someone's fate through this haiku. you use the imperative, telling your client what they should do. sometimes you ask them direct questions. sometimes your statements are romantic, they can also be mysterious and threatening, but avoid cliches."},
+            {"role": "system", "content": "you are reading someone's fate. you use the imperative, telling your client what they should do. sometimes you ask them direct questions. your statements are pure, romantic, although at times they can also be mysterious and threatening - avoid cliches."},
             {"role": "user", "content": prompt}
         ]
     )
@@ -182,14 +174,22 @@ def get_oracle():
         cache_timestamp = cache_data['timestamp']
         if datetime.now() - cache_timestamp < timedelta(days=1):
             # Serve the cached message
-            print(datetime.now(), "\n cached message less than 1 day old, returning cached message \n", cache_data["message"], "\n generated at:", cache_timestamp)
+            print("initiated", datetime.now(), "\n cached message less than 1 day old,", "\n generated at:", cache_timestamp, "\n returning cached message \n", cache_data["message"])
             return cache_data['message']
+        else:
+            print(datetime.now(), "cached message more than a day old, (", cache_timestamp, ") generating new message")
+            package = generate_message()
+            print(datetime.now(), "\n", "cached message:", package)
+    else:
+        print(datetime.now(), "no cache message found! generating new message.")
+        package = generate_message()
+        print(datetime.now(), "\n", "cached message:", package)        
+
     
     # Generate a new message if cache is outdated or missing
-    print(datetime.now(), "cached message outdated or missing, generating new message")
-    package = generate_message()
-    print(datetime.now(), "\n", "cached message:", package)
-    return package
+    # print(datetime.now(), "cached message outdated or missing, generating new message")
+    # package = generate_message()
+    # return package
 
 get_oracle()
 
